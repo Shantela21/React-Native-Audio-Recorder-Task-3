@@ -4,7 +4,7 @@ import AudioRecorder from '../components/AudioRecorder';
 export default function Index() {
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style="light" backgroundColor="#0F0F23" />
       <AudioRecorder />
     </>
   );
