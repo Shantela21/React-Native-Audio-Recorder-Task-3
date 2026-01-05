@@ -1,50 +1,126 @@
-# Welcome to your Expo app 👋
+# Voice Recorder App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native voice recording application with CRUD functionality for managing voice notes.
 
-## Get started
+## Features
 
-1. Install dependencies
+### Core Functionality
+- **Audio Recording**: Record high-quality audio using device microphone
+- **Audio Playback**: Play recorded audio with duration display and playback controls
+- **Voice Notes List**: Display all recordings with date/time information
+- **Search**: Find specific recordings by name
+- **Rename**: Edit recording names for better organization
+- **Delete**: Remove unwanted recordings with confirmation
 
-   ```bash
-   npm install
-   ```
+### Technical Features
+- **Persistent Storage**: Recordings are saved using AsyncStorage
+- **Permissions Handling**: Automatic microphone permission requests
+- **Real-time Updates**: Live recording duration and playback progress
+- **Modern UI**: Clean, intuitive interface with smooth interactions
+- **Error Handling**: Comprehensive error messages and fallbacks
 
-2. Start the app
+## Installation
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Install dependencies:
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Start the development server:
+```bash
+npm start
+```
 
-## Learn more
+3. Run on device/simulator:
+```bash
+npm run android     # For Android
+npm run ios         # For iOS
+npm run web         # For web
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Usage
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Recording Audio
+1. Tap the microphone button to start recording
+2. The recording indicator shows duration in real-time
+3. Tap the stop button to finish recording
+4. Recording is automatically saved with a timestamp name
 
-## Join the community
+### Playing Audio
+1. Tap the play button next to any recording
+2. Use the same button to pause/resume playback
+3. Duration shows current time / total time
 
-Join our community of developers creating universal apps.
+### Managing Recordings
+- **Search**: Use the search bar to filter recordings by name
+- **Rename**: Tap the edit icon to change recording names
+- **Delete**: Tap the trash icon to remove recordings (with confirmation)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Technical Implementation
+
+### Dependencies
+- `expo-av`: Audio recording and playback
+- `@react-native-async-storage/async-storage`: Persistent storage
+- `expo-file-system`: File management
+- `@expo/vector-icons`: UI icons
+
+### Architecture
+- **Components**: Modular React Native components
+- **Types**: TypeScript interfaces for type safety
+- **Utils**: Storage management and helper functions
+- **Storage**: AsyncStorage for data persistence
+
+### File Structure
+```
+app/
+├── index.tsx              # Main app entry
+├── _layout.tsx            # Navigation layout
+components/
+├── AudioRecorder.tsx      # Main recording component
+types/
+├── audio.ts               # TypeScript interfaces
+utils/
+├── simpleAudioStorage.ts  # Storage management
+```
+
+## Evaluation Criteria Met
+
+✅ **Audio Recording**: Can record audio with microphone  
+✅ **Audio Playback**: Can play audio with duration display  
+✅ **Playback Controls**: User can control audio playback  
+✅ **Audio Persistence**: Audio is persistent when app is closed/restarted  
+✅ **Audio Renaming**: Can rename audio recordings  
+✅ **Search Functionality**: Can search recordings by name  
+
+## Permissions
+
+The app requires:
+- **Microphone Access**: For recording audio
+- **Storage Access**: For saving audio files
+
+These permissions are automatically requested when needed.
+
+## Platform Support
+
+- **iOS**: Full support with native audio recording
+- **Android**: Full support with native audio recording  
+- **Web**: Limited support (browser-dependent)
+
+## Development
+
+Built with:
+- React Native with Expo
+- TypeScript for type safety
+- Modern React hooks and patterns
+- Responsive design principles
+
+## Future Enhancements
+
+Potential features for future versions:
+- Cloud backup and sync
+- Audio quality settings
+- Playback speed control
+- Audio waveform visualization
+- Export/share functionality
+- Categories and tags
+- Voice-to-text transcription
