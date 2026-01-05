@@ -30,6 +30,8 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
   const [editName, setEditName] = useState('');
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState<{[key: string]: number}>({});
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [playbackPosition, setPlaybackPosition] = useState<{[key: string]: number}>({});
   const recordingInterval = useRef<number | null>(null);
   const playbackInterval = useRef<number | null>(null);
   
@@ -182,7 +184,11 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
       console.log('Loading Sound');
       const { sound: playbackSound } = await Audio.Sound.createAsync(
         { uri: note.uri },
-        { shouldPlay: true }
+        { 
+          shouldPlay: true,
+          rate: playbackSpeed,
+          shouldCorrectPitch: true,
+        }
       );
       
       setSound(playbackSound);
@@ -190,16 +196,16 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
       
       // Start playback duration tracking
       const startTime = Date.now();
-      playbackInterval.current = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        setPlaybackDuration(prev => ({ ...prev, [note.id]: elapsed }));
-        
-        if (elapsed >= note.duration) {
-          clearInterval(playbackInterval.current!);
-          setIsPlaying(null);
-          setPlaybackDuration(prev => ({ ...prev, [note.id]: 0 }));
+      playbackInterval.current = setInterval(async () => {
+        if (playbackSound) {
+          const status = await playbackSound.getStatusAsync();
+          if (status.isLoaded && status.positionMillis) {
+            const currentSeconds = Math.floor(status.positionMillis / 1000);
+            setPlaybackDuration(prev => ({ ...prev, [note.id]: currentSeconds }));
+            setPlaybackPosition(prev => ({ ...prev, [note.id]: status.positionMillis! }));
+          }
         }
-      }, 1000);
+      }, 100);
 
       playbackSound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && !status.isPlaying && status.didJustFinish) {
@@ -208,12 +214,81 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
             clearInterval(playbackInterval.current);
           }
           setPlaybackDuration(prev => ({ ...prev, [note.id]: 0 }));
+          setPlaybackPosition(prev => ({ ...prev, [note.id]: 0 }));
         }
       });
 
     } catch (error) {
       console.error('Error playing sound:', error);
       Alert.alert('Error', 'Failed to play recording');
+    }
+  };
+
+  const seekToPosition = async (note: VoiceNote, position: number) => {
+    if (sound && isPlaying === note.id) {
+      try {
+        await sound.setPositionAsync(position);
+        setPlaybackPosition(prev => ({ ...prev, [note.id]: position }));
+        setPlaybackDuration(prev => ({ ...prev, [note.id]: Math.floor(position / 1000) }));
+      } catch (error) {
+        console.error('Error seeking:', error);
+      }
+    }
+  };
+
+  const skipForward = async (note: VoiceNote, seconds: number = 10) => {
+    if (sound && isPlaying === note.id) {
+      try {
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded && status.positionMillis) {
+          const newPosition = Math.min(status.positionMillis + (seconds * 1000), note.duration * 1000);
+          await seekToPosition(note, newPosition);
+        }
+      } catch (error) {
+        console.error('Error skipping forward:', error);
+      }
+    }
+  };
+
+  const skipBackward = async (note: VoiceNote, seconds: number = 10) => {
+    if (sound && isPlaying === note.id) {
+      try {
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded && status.positionMillis) {
+          const newPosition = Math.max(status.positionMillis - (seconds * 1000), 0);
+          await seekToPosition(note, newPosition);
+        }
+      } catch (error) {
+        console.error('Error skipping backward:', error);
+      }
+    }
+  };
+
+  const changePlaybackSpeed = async (speed: number) => {
+    setPlaybackSpeed(speed);
+    if (sound && isPlaying) {
+      try {
+        await sound.setRateAsync(speed, true);
+      } catch (error) {
+        console.error('Error changing speed:', error);
+      }
+    }
+  };
+
+  const stopPlayback = async (note: VoiceNote) => {
+    if (sound && isPlaying === note.id) {
+      try {
+        await sound.stopAsync();
+        await sound.setPositionAsync(0);
+        setIsPlaying(null);
+        setPlaybackDuration(prev => ({ ...prev, [note.id]: 0 }));
+        setPlaybackPosition(prev => ({ ...prev, [note.id]: 0 }));
+        if (playbackInterval.current) {
+          clearInterval(playbackInterval.current);
+        }
+      } catch (error) {
+        console.error('Error stopping playback:', error);
+      }
     }
   };
 
@@ -387,11 +462,29 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
                     </TouchableOpacity>
                   </Animated.View>
                   
+                  {isPlaying === note.id && (
+                    <TouchableOpacity
+                      style={styles.stopButton}
+                      onPress={() => stopPlayback(note)}
+                    >
+                      <Ionicons name="stop" size={20} color="#FF6B6B" />
+                    </TouchableOpacity>
+                  )}
+                  
                   <View style={styles.durationInfo}>
                     <Text style={styles.durationText}>
                       ⏱️ {formatDuration(playbackDuration[note.id] || 0)} / {formatDuration(note.duration)}
                     </Text>
-                    <View style={styles.progressBar}>
+                    
+                    <TouchableOpacity
+                      style={styles.progressBar}
+                      onPress={(e) => {
+                        const { locationX } = e.nativeEvent;
+                        const progressBarWidth = 200; // Approximate width
+                        const clickPosition = (locationX / progressBarWidth) * note.duration * 1000;
+                        seekToPosition(note, clickPosition);
+                      }}
+                    >
                       <View
                         style={[
                           styles.progressFill,
@@ -400,6 +493,36 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
                           },
                         ]}
                       />
+                    </TouchableOpacity>
+                    
+                    <View style={styles.playbackSecondaryControls}>
+                      <TouchableOpacity
+                        style={styles.skipButton}
+                        onPress={() => skipBackward(note, 10)}
+                      >
+                        <Ionicons name="play-back" size={16} color="#888" />
+                        <Text style={styles.skipButtonText}>10s</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        style={styles.speedButton}
+                        onPress={() => {
+                          const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+                          const currentIndex = speeds.indexOf(playbackSpeed);
+                          const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
+                          changePlaybackSpeed(nextSpeed);
+                        }}
+                      >
+                        <Text style={styles.speedButtonText}>{playbackSpeed}x</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        style={styles.skipButton}
+                        onPress={() => skipForward(note, 10)}
+                      >
+                        <Text style={styles.skipButtonText}>10s</Text>
+                        <Ionicons name="play-forward" size={16} color="#888" />
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
@@ -459,8 +582,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#1A1A2E',
     paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingHorizontal: 32,
+    paddingBottom: 28,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     shadowColor: '#000',
@@ -472,7 +595,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 20,
     color: '#FFFFFF',
     textAlign: 'center',
   },
@@ -481,14 +604,14 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     position: 'absolute',
-    left: 16,
+    left: 20,
     top: 18,
     zIndex: 1,
   },
   searchInput: {
     backgroundColor: '#16213E',
-    padding: 16,
-    paddingLeft: 48,
+    padding: 18,
+    paddingLeft: 52,
     borderRadius: 16,
     fontSize: 16,
     color: '#FFFFFF',
@@ -497,34 +620,35 @@ const styles = StyleSheet.create({
   },
   notesList: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 120, // Extra padding for recording controls
+    paddingHorizontal: 20,
+    paddingBottom: 140, // Extra padding for recording controls
+    paddingTop: 8,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 80,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   emptyText: {
     fontSize: 20,
     color: '#888',
-    marginTop: 20,
+    marginTop: 24,
     textAlign: 'center',
     fontWeight: '500',
   },
   emptySubText: {
     fontSize: 16,
     color: '#666',
-    marginTop: 8,
+    marginTop: 12,
     textAlign: 'center',
   },
   noteItem: {
     backgroundColor: '#1A1A2E',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    padding: 20,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -532,7 +656,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderLeftWidth: 3,
     borderLeftColor: '#E94560',
-    marginHorizontal: 4, // Small horizontal margin for better spacing
+    marginHorizontal: 8, // Increased horizontal margin for better spacing
   },
   noteContent: {
     flex: 1,
@@ -541,49 +665,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   noteName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     flex: 1,
-    marginRight: 12,
-    lineHeight: 22,
+    marginRight: 16,
+    lineHeight: 24,
   },
   editInput: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#E94560',
-    padding: 2,
-    lineHeight: 22,
+    padding: 4,
+    lineHeight: 24,
   },
   noteActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
   actionButton: {
-    padding: 8,
+    padding: 10,
     borderRadius: 8,
     backgroundColor: 'rgba(233, 69, 96, 0.1)',
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 44,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
   noteDate: {
     fontSize: 13,
     color: '#888',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   playbackControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   playButton: {
     backgroundColor: '#E94560',
@@ -602,6 +726,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B6B',
     shadowColor: '#FF6B6B',
   },
+  stopButton: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
   durationInfo: {
     flex: 1,
   },
@@ -609,22 +742,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '600',
+    marginBottom: 8,
   },
   progressBar: {
-    height: 3,
+    height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2,
-    marginTop: 6,
+    marginTop: 8,
+    marginBottom: 12,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#E94560',
     borderRadius: 2,
   },
+  playbackSecondaryControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  skipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(136, 136, 136, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+  },
+  skipButtonText: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '500',
+  },
+  speedButton: {
+    backgroundColor: 'rgba(233, 69, 96, 0.1)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  speedButtonText: {
+    fontSize: 12,
+    color: '#E94560',
+    fontWeight: '600',
+  },
   recordingControls: {
     backgroundColor: '#1A1A2E',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     alignItems: 'center',
@@ -637,8 +803,8 @@ const styles = StyleSheet.create({
   recordingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 10,
+    marginBottom: 20,
+    gap: 12,
   },
   recordingDot: {
     width: 12,
@@ -660,12 +826,12 @@ const styles = StyleSheet.create({
   },
   recordButton: {
     backgroundColor: '#533483',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: '#533483',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
