@@ -12,6 +12,8 @@ import {
     View
 } from 'react-native';
 import {
+    FeedbackSupportButton,
+    FeedbackSupportComponent,
     NoteItem,
     RecordButton,
     SearchComponent,
@@ -43,6 +45,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
   const [playbackPosition, setPlaybackPosition] = useState<{[key: string]: number}>({});
   const [settings, setSettings] = useState<Settings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const recordingInterval = useRef<number | null>(null);
   const playbackInterval = useRef<number | null>(null);
   
@@ -445,6 +448,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          <FeedbackSupportButton onPress={() => setShowFeedback(true)} />
           <SettingsButton onPress={() => setShowSettings(true)} />
         </View>
       </View>
@@ -510,17 +514,27 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
       >
         <SettingsComponent
           settings={settings || {
-            recordingQuality: 'high',
+            recordingQuality: 'medium',
             playbackSpeeds: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
             defaultPlaybackSpeed: 1.0,
+            skipDuration: 10,
             autoSaveRecordings: true,
             showRecordingDuration: true,
             enableAnimations: true,
             theme: 'dark',
-            skipDuration: 10,
           }}
           onSettingsChange={saveSettings}
           onClose={() => setShowSettings(false)}
+        />
+      </Modal>
+
+      <Modal
+        visible={showFeedback}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <FeedbackSupportComponent
+          onClose={() => setShowFeedback(false)}
         />
       </Modal>
     </Animated.View>

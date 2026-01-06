@@ -5,6 +5,7 @@ import {
     Alert,
     Animated,
     Dimensions,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -13,6 +14,8 @@ import {
 import { VoiceNote } from '../types/audio';
 import { SimpleAudioStorage } from '../utils/simpleAudioStorage';
 import {
+  FeedbackSupportButton,
+    FeedbackSupportComponent,
     NoteItem,
     RecordButton,
     SearchComponent
@@ -36,6 +39,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
   const [playbackDuration, setPlaybackDuration] = useState<{[key: string]: number}>({});
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [playbackPosition, setPlaybackPosition] = useState<{[key: string]: number}>({});
+  const [showFeedback, setShowFeedback] = useState(false);
   const recordingInterval = useRef<number | null>(null);
   const playbackInterval = useRef<number | null>(null);
   
@@ -409,10 +413,13 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.header}>
         <Text style={styles.title}>🎙️ Voice Recorder</Text>
-        <SearchComponent 
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.headerActions}>
+          <SearchComponent 
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <FeedbackSupportButton onPress={() => setShowFeedback(true)} />
+        </View>
       </View>
 
       <ScrollView style={styles.notesList} showsVerticalScrollIndicator={false}>
@@ -468,6 +475,16 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
         onCancel={cancelRecording}
         pulseAnim={pulseAnim}
       />
+
+      <Modal
+        visible={showFeedback}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <FeedbackSupportComponent
+          onClose={() => setShowFeedback(false)}
+        />
+      </Modal>
     </Animated.View>
   );
 };
@@ -489,6 +506,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 8,
   },
   title: {
     fontSize: 32,
