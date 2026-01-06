@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export interface Settings {
@@ -246,94 +246,109 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
     backgroundColor: '#1A1A2E',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
   closeButton: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   saveButton: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(233, 69, 96, 0.1)',
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 24,
+    
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 40,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#E94560',
-    marginBottom: 16,
+    marginBottom: 20,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   optionContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 24,
     backgroundColor: '#1A1A2E',
-    padding: 16,
-    borderRadius: 12,
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#0F3460',
+    
   },
   optionContent: {
     flex: 1,
+    marginRight: 20,
   },
   optionTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   optionDescription: {
     fontSize: 14,
     color: '#888',
+    lineHeight: 20,
   },
   optionsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
   optionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
     backgroundColor: '#16213E',
     borderWidth: 1,
     borderColor: '#0F3460',
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   optionButtonSelected: {
     backgroundColor: '#E94560',
     borderColor: '#E94560',
   },
   optionButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#888',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   optionButtonTextSelected: {
     color: '#FFFFFF',
   },
   aboutContainer: {
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
     backgroundColor: '#1A1A2E',
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#0F3460',
   },
   aboutText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 8,
@@ -352,3 +367,4 @@ const styles = StyleSheet.create({
 });
 
 export { defaultSettings };
+

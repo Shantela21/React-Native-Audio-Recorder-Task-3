@@ -30,6 +30,7 @@ interface AudioRecorderProps {}
 const AudioRecorder: React.FC<AudioRecorderProps> = () => {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
@@ -124,6 +125,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
       
       setRecording(recording);
       setIsRecording(true);
+      setIsPaused(false);
       setRecordingDuration(0);
 
       // Start duration timer
@@ -137,11 +139,40 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
     }
   };
 
+  const pauseRecording = async () => {
+    if (recording && !isPaused) {
+      try {
+        await recording.pauseAsync();
+        setIsPaused(true);
+        if (recordingInterval.current) {
+          clearInterval(recordingInterval.current);
+        }
+      } catch (error) {
+        console.error('Error pausing recording:', error);
+      }
+    }
+  };
+
+  const resumeRecording = async () => {
+    if (recording && isPaused) {
+      try {
+        await recording.startAsync();
+        setIsPaused(false);
+        recordingInterval.current = setInterval(() => {
+          setRecordingDuration(prev => prev + 1);
+        }, 1000);
+      } catch (error) {
+        console.error('Error resuming recording:', error);
+      }
+    }
+  };
+
   const stopRecording = async () => {
     if (!recording) return;
 
     console.log('Stopping recording..');
     setIsRecording(false);
+    setIsPaused(false);
     
     if (recordingInterval.current) {
       clearInterval(recordingInterval.current);
@@ -284,6 +315,49 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
     }
   };
 
+  const handleRecordingControl = async () => {
+    if (!isRecording) {
+      await startRecording();
+    } else if (isPaused) {
+      await resumeRecording();
+    } else {
+      await pauseRecording();
+    }
+  };
+
+  // Add a separate save function for when user wants to save while paused
+  const cancelRecording = async () => {
+    if (isRecording && isPaused) {
+      try {
+        // Stop the recording without saving
+        setIsRecording(false);
+        setIsPaused(false);
+        
+        if (recordingInterval.current) {
+          clearInterval(recordingInterval.current);
+        }
+
+        if (recording) {
+          await recording.stopAndUnloadAsync();
+        }
+
+        setRecording(null);
+        setRecordingDuration(0);
+        
+        Alert.alert('Cancelled', 'Recording has been cancelled');
+      } catch (error) {
+        console.error('Error cancelling recording:', error);
+        Alert.alert('Error', 'Failed to cancel recording');
+      }
+    }
+  };
+
+  const saveRecording = async () => {
+    if (isRecording && isPaused) {
+      await stopRecording();
+    }
+  };
+
   const stopPlayback = async (note: VoiceNote) => {
     if (sound && isPlaying === note.id) {
       try {
@@ -421,7 +495,11 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
 
       <RecordButton
         isRecording={isRecording}
-        onPress={isRecording ? stopRecording : startRecording}
+        isPaused={isPaused}
+        recordingDuration={recordingDuration}
+        onPress={handleRecordingControl}
+        onSave={saveRecording}
+        onCancel={cancelRecording}
         pulseAnim={pulseAnim}
       />
 
@@ -457,8 +535,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#1A1A2E',
     paddingTop: 50,
-    paddingHorizontal: 32,
-    paddingBottom: 28,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     shadowColor: '#000',
@@ -471,26 +549,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginTop: 8,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 24,
     color: '#FFFFFF',
     textAlign: 'center',
   },
   notesList: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 140,
-    paddingTop: 8,
+    paddingTop: 16,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 80,
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
   },
   emptyText: {
     fontSize: 20,

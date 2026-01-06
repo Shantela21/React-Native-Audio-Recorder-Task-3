@@ -4,11 +4,23 @@ import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 
 interface RecordButtonProps {
   isRecording: boolean;
+  isPaused: boolean;
+  recordingDuration: number;
   onPress: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
   pulseAnim: Animated.Value;
 }
 
-export const RecordButton: React.FC<RecordButtonProps> = ({ isRecording, onPress, pulseAnim }) => {
+export const RecordButton: React.FC<RecordButtonProps> = ({ 
+  isRecording, 
+  isPaused, 
+  recordingDuration, 
+  onPress, 
+  onSave,
+  onCancel,
+  pulseAnim 
+}) => {
   return (
     <View style={styles.container}>
       {isRecording && (
@@ -21,30 +33,64 @@ export const RecordButton: React.FC<RecordButtonProps> = ({ isRecording, onPress
             <View style={[styles.recordingDot, styles.recordingDotPulse]} />
           </Animated.View>
           <Text style={styles.recordingText}>
-            🔴 Recording... {formatDuration(0)}
+            🔴 {isPaused ? 'Paused' : 'Recording'}... {formatDuration(recordingDuration)}
           </Text>
         </View>
       )}
       
-      <Animated.View
-        style={{
-          transform: [{ scale: pulseAnim }],
-        }}
-      >
-        <TouchableOpacity
-          style={[styles.recordButton, isRecording && styles.recordButtonActive]}
-          onPress={onPress}
+      <View style={styles.buttonContainer}>
+        {isRecording && isPaused && (
+          <>
+            {onSave && (
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={onSave}
+              >
+                <Ionicons name="checkmark" size={24} color="white" />
+              </TouchableOpacity>
+            )}
+            
+            {onCancel && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={onCancel}
+              >
+                <Ionicons name="close" size={24} color="white" />
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+        
+        <Animated.View
+          style={{
+            transform: [{ scale: pulseAnim }],
+          }}
         >
-          <Ionicons
-            name={isRecording ? "stop" : "mic"}
-            size={36}
-            color="white"
-          />
-        </TouchableOpacity>
-      </Animated.View>
+          <TouchableOpacity
+            style={[
+              styles.recordButton, 
+              isRecording && !isPaused && styles.recordButtonActive,
+              isRecording && isPaused && styles.recordButtonPaused
+            ]}
+            onPress={onPress}
+          >
+            <Ionicons
+              name={
+                !isRecording ? "mic" : 
+                isPaused ? "play" : "pause"
+              }
+              size={36}
+              color="white"
+            />
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
       
       <Text style={styles.recordButtonText}>
-        {isRecording ? '⏹️ Stop Recording' : '🎤 Start Recording'}
+        {
+          !isRecording ? '🎤 Start Recording' :
+          isPaused ? '▶️ Resume Recording' : '⏸️ Pause Recording'
+        }
       </Text>
     </View>
   );
@@ -69,6 +115,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 6,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 16,
   },
   recordingIndicator: {
     flexDirection: 'row',
@@ -101,7 +153,6 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
     shadowColor: '#533483',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -111,6 +162,36 @@ const styles = StyleSheet.create({
   recordButtonActive: {
     backgroundColor: '#E94560',
     shadowColor: '#E94560',
+  },
+  recordButtonPaused: {
+    backgroundColor: '#FFA500',
+    shadowColor: '#FFA500',
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#F44336',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#F44336',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   recordButtonText: {
     fontSize: 16,

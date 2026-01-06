@@ -24,22 +24,25 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({ value, onChang
 
 const styles = StyleSheet.create({
   searchContainer: {
+    flex: 1,
     position: 'relative',
+    height: 48,
   },
   searchIcon: {
     position: 'absolute',
-    left: 20,
-    top: 18,
+    left: 16,
+    top: 14,
     zIndex: 1,
   },
   searchInput: {
     backgroundColor: '#16213E',
-    padding: 18,
-    paddingLeft: 52,
-    borderRadius: 16,
+    padding: 12,
+    paddingLeft: 48,
+    borderRadius: 12,
     fontSize: 16,
     color: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#0F3460',
+    height: 48,
   },
 });
