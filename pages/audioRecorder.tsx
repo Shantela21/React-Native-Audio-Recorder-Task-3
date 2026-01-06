@@ -5,6 +5,7 @@ import {
     Alert,
     Animated,
     Dimensions,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -13,9 +14,13 @@ import {
 import {
     NoteItem,
     RecordButton,
-    SearchComponent
+    SearchComponent,
+    SettingsButton,
+    SettingsComponent
 } from '../components';
+import { Settings } from '../components/SettingsComponent';
 import { VoiceNote } from '../types/audio';
+import { SettingsStorage } from '../utils/settingsStorage';
 import { SimpleAudioStorage } from '../utils/simpleAudioStorage';
 
 const { width } = Dimensions.get('window');
@@ -35,6 +40,8 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
   const [playbackDuration, setPlaybackDuration] = useState<{[key: string]: number}>({});
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [playbackPosition, setPlaybackPosition] = useState<{[key: string]: number}>({});
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const recordingInterval = useRef<number | null>(null);
   const playbackInterval = useRef<number | null>(null);
   
@@ -45,6 +52,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
 
   useEffect(() => {
     loadVoiceNotes();
+    loadSettings();
     
     // Initial fade-in animation
     Animated.timing(fadeAnim, {
@@ -65,6 +73,26 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
       }
     };
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const loadedSettings = await SettingsStorage.loadSettings();
+      setSettings(loadedSettings);
+      setPlaybackSpeed(loadedSettings.defaultPlaybackSpeed);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const saveSettings = async (newSettings: Settings) => {
+    try {
+      await SettingsStorage.saveSettings(newSettings);
+      setSettings(newSettings);
+      setPlaybackSpeed(newSettings.defaultPlaybackSpeed);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
 
   const loadVoiceNotes = async () => {
     try {
@@ -215,12 +243,13 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
     }
   };
 
-  const skipForward = async (note: VoiceNote, seconds: number = 10) => {
+  const skipForward = async (note: VoiceNote, seconds?: number) => {
+    const skipDuration = seconds || settings?.skipDuration || 10;
     if (sound && isPlaying === note.id) {
       try {
         const status = await sound.getStatusAsync();
         if (status.isLoaded && status.positionMillis) {
-          const newPosition = Math.min(status.positionMillis + (seconds * 1000), note.duration * 1000);
+          const newPosition = Math.min(status.positionMillis + (skipDuration * 1000), note.duration * 1000);
           await seekToPosition(note, newPosition);
         }
       } catch (error) {
@@ -229,12 +258,13 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
     }
   };
 
-  const skipBackward = async (note: VoiceNote, seconds: number = 10) => {
+  const skipBackward = async (note: VoiceNote, seconds?: number) => {
+    const skipDuration = seconds || settings?.skipDuration || 10;
     if (sound && isPlaying === note.id) {
       try {
         const status = await sound.getStatusAsync();
         if (status.isLoaded && status.positionMillis) {
-          const newPosition = Math.max(status.positionMillis - (seconds * 1000), 0);
+          const newPosition = Math.max(status.positionMillis - (skipDuration * 1000), 0);
           await seekToPosition(note, newPosition);
         }
       } catch (error) {
@@ -336,10 +366,13 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.header}>
         <Text style={styles.title}>🎙️ Voice Recorder</Text>
-        <SearchComponent 
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.headerActions}>
+          <SearchComponent 
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <SettingsButton onPress={() => setShowSettings(true)} />
+        </View>
       </View>
 
       <ScrollView style={styles.notesList} showsVerticalScrollIndicator={false}>
@@ -375,7 +408,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
               onSkipForward={() => skipForward(note)}
               onSkipBackward={() => skipBackward(note)}
               onChangeSpeed={() => {
-                const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+                const speeds = settings?.playbackSpeeds || [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
                 const currentIndex = speeds.indexOf(playbackSpeed);
                 const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
                 changePlaybackSpeed(nextSpeed);
@@ -391,6 +424,27 @@ const AudioRecorder: React.FC<AudioRecorderProps> = () => {
         onPress={isRecording ? stopRecording : startRecording}
         pulseAnim={pulseAnim}
       />
+
+      <Modal
+        visible={showSettings}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <SettingsComponent
+          settings={settings || {
+            recordingQuality: 'high',
+            playbackSpeeds: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
+            defaultPlaybackSpeed: 1.0,
+            autoSaveRecordings: true,
+            showRecordingDuration: true,
+            enableAnimations: true,
+            theme: 'dark',
+            skipDuration: 10,
+          }}
+          onSettingsChange={saveSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      </Modal>
     </Animated.View>
   );
 };
@@ -402,7 +456,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1A1A2E',
-    paddingTop: 60,
+    paddingTop: 50,
     paddingHorizontal: 32,
     paddingBottom: 28,
     borderBottomLeftRadius: 24,
@@ -413,8 +467,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#FFFFFF',
