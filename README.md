@@ -1,23 +1,55 @@
 # Voice Recorder App
 
-A React Native voice recording application with CRUD functionality for managing voice notes.
+A professional React Native voice recording application with advanced recording controls, playback features, and customizable settings.
 
 ## Features
 
-### Core Functionality
+### Core Recording Functionality
 - **Audio Recording**: Record high-quality audio using device microphone
-- **Audio Playback**: Play recorded audio with duration display and playback controls
+- **Real-time Duration Counter**: Live MM:SS display during recording
+- **Pause/Resume Recording**: Full control to pause and continue recordings
+- **Save/Cancel Options**: Save or discard recordings when paused
+- **Audio Playback**: Play recorded audio with comprehensive controls
 - **Voice Notes List**: Display all recordings with date/time information
 - **Search**: Find specific recordings by name
 - **Rename**: Edit recording names for better organization
 - **Delete**: Remove unwanted recordings with confirmation
 
+### Advanced Playback Controls
+- **Play/Pause/Stop**: Full playback control
+- **Seek Bar**: Drag to jump to any position in the recording
+- **Skip Forward/Backward**: Skip by configurable durations (5s, 10s, 15s, 30s)
+- **Playback Speed Control**: Variable speed playback (0.5x to 2.0x)
+- **Progress Display**: Real-time playback position and duration
+
+### Settings & Customization
+- **Recording Quality**: Choose between Low (8kHz), Medium (22kHz), and High (44kHz)
+- **Playback Speeds**: Configure available playback speed options
+- **Default Playback Speed**: Set preferred default speed
+- **Skip Duration**: Customize forward/backward skip times
+- **User Interface**: Toggle auto-save, duration display, and animations
+- **Theme**: Choose between Dark and Light themes
+- **About Section**: App information and version details
+
 ### Technical Features
-- **Persistent Storage**: Recordings are saved using AsyncStorage
+- **Persistent Storage**: Recordings and settings saved using AsyncStorage
 - **Permissions Handling**: Automatic microphone permission requests
 - **Real-time Updates**: Live recording duration and playback progress
-- **Modern UI**: Clean, intuitive interface with smooth interactions
+- **Modern UI**: Clean, intuitive interface with smooth animations
 - **Error Handling**: Comprehensive error messages and fallbacks
+- **Modular Architecture**: Component-based design for maintainability
+- **Mobile Optimized**: Touch-friendly interface with proper spacing
+
+## Recording Workflow
+
+1. **Start Recording**: Tap the microphone button to begin recording
+2. **Live Duration**: See real-time recording duration in MM:SS format
+3. **Pause Recording**: Tap pause button to temporarily stop recording
+4. **Choose Action** (when paused):
+   - **Save**: Tap checkmark to save the recording
+   - **Resume**: Tap play button to continue recording
+   - **Cancel**: Tap X button to discard recording
+5. **Playback**: Use advanced controls for playback, seeking, and speed adjustment
 
 ## Installation
 
@@ -30,6 +62,68 @@ npm install
 ```bash
 npm start
 ```
+
+3. Run on device/simulator:
+```bash
+# For iOS
+npx expo run ios
+
+# For Android
+npx expo run android
+```
+
+## Project Structure
+
+```
+├── components/          # Reusable UI components
+│   ├── SearchComponent.tsx
+│   ├── PlayButton.tsx
+│   ├── DeleteButton.tsx
+│   ├── EditButton.tsx
+│   ├── RecordButton.tsx
+│   ├── NoteItem.tsx
+│   ├── SettingsComponent.tsx
+│   ├── SettingsButton.tsx
+│   └── index.ts         # Component exports
+├── pages/               # Main application pages
+│   └── audioRecorder.tsx
+├── utils/               # Utility functions
+│   ├── simpleAudioStorage.ts
+│   └── settingsStorage.ts
+├── types/               # TypeScript type definitions
+│   └── audio.ts
+└── app/                 # Expo app configuration
+    └── index.tsx
+```
+
+## Component Architecture
+
+The app uses a modular component architecture with:
+
+- **RecordButton**: Handles recording controls with pause/resume/save/cancel
+- **NoteItem**: Individual voice note display with playback controls
+- **SettingsComponent**: Comprehensive settings interface
+- **SearchComponent**: Unified search functionality
+- **Action Buttons**: Reusable play, delete, and edit components
+
+## Settings Configuration
+
+All user preferences are automatically saved and restored:
+
+- **Recording Quality**: Affects audio file size and quality
+- **Playback Speeds**: Available speed options during playback
+- **Skip Durations**: Time intervals for forward/backward skipping
+- **UI Preferences**: Auto-save, animations, and display options
+- **Theme**: Dark/Light mode selection
+
+## Development
+
+Built with:
+- React Native with Expo
+- TypeScript for type safety
+- Expo AV for audio recording/playback
+- AsyncStorage for data persistence
+- React Native Animated for smooth UI interactions
 
 3. Run on device/simulator:
 ```bash
