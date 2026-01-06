@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import AudioRecorder from '../components/AudioRecorder';
+import AudioRecorder from '../pages/audioRecorder';
 
 export default function Index() {
   return (
