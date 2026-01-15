@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#0F3460',
+    borderColor: 'red',
     
   },
   optionContent: {
