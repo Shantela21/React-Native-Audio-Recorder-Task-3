@@ -1,3 +1,5 @@
+<img src="https://socialify.git.ci/Shantela21/React-Native-Audio-Recorder-Task-3/image?language=1&owner=1&name=1&stargazers=1&theme=Light" alt="React-Native-Audio-Recorder-Task-3" width="640" height="320" />
+
 # Voice Recorder App
 
 A professional React Native voice recording application with advanced recording controls, playback features, and customizable settings.
